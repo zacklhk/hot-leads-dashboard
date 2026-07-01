@@ -1,0 +1,1020 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hot Leads Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+:root,[data-theme="light"]{
+  --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
+  --color-surface-offset:#f3f0ec;--color-surface-offset-2:#edeae5;
+  --color-surface-dynamic:#e6e4df;--color-divider:#dcd9d5;--color-border:#d4d1ca;
+  --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
+  --color-text-inverse:#f9f8f4;
+  --color-primary:#01696f;--color-primary-hover:#0c4e54;--color-primary-active:#0f3638;
+  --color-primary-highlight:#cedcd8;
+  --color-success:#437a22;--color-success-hover:#2e5c10;--color-success-highlight:#d4dfcc;
+  --color-error:#a13544;--color-error-hover:#782b33;--color-error-highlight:#dececb;
+  --color-warning:#964219;--color-warning-highlight:#ddcfc6;
+  --color-gold:#d19900;--color-gold-highlight:#e9e0c6;
+  --color-blue:#006494;--color-blue-highlight:#c6d8e4;
+  --color-orange:#da7101;--color-orange-highlight:#e7d7c4;
+  --color-purple:#7a39bb;--color-purple-highlight:#dacfde;
+  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--radius-full:9999px;
+  --shadow-sm:0 1px 2px oklch(0.2 0.01 80/0.06);
+  --shadow-md:0 4px 12px oklch(0.2 0.01 80/0.08);
+  --shadow-lg:0 12px 32px oklch(0.2 0.01 80/0.12);
+  --trans:180ms cubic-bezier(0.16,1,0.3,1);
+  --s1:.25rem;--s2:.5rem;--s3:.75rem;--s4:1rem;--s5:1.25rem;--s6:1.5rem;
+  --s8:2rem;--s10:2.5rem;--s12:3rem;--s16:4rem;
+  --tx-xs:clamp(.75rem,.7rem + .25vw,.875rem);
+  --tx-sm:clamp(.875rem,.8rem + .35vw,1rem);
+  --tx-base:clamp(1rem,.95rem + .25vw,1.125rem);
+  --tx-lg:clamp(1.125rem,1rem + .75vw,1.5rem);
+  --tx-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
+  --font-body:'Inter','Helvetica Neue',sans-serif;
+}
+[data-theme="dark"]{
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-surface-offset-2:#22211f;
+  --color-surface-dynamic:#2d2c2a;--color-divider:#262523;--color-border:#393836;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-text-inverse:#2b2a28;
+  --color-primary:#4f98a3;--color-primary-hover:#227f8b;--color-primary-active:#1a626b;
+  --color-primary-highlight:#313b3b;
+  --color-success:#6daa45;--color-success-highlight:#3a4435;
+  --color-error:#dd6974;--color-error-highlight:#574848;
+  --color-warning:#bb653b;--color-warning-highlight:#564942;
+  --color-gold:#e8af34;--color-gold-highlight:#4d4332;
+  --color-blue:#5591c7;--color-blue-highlight:#3a4550;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.2);
+  --shadow-md:0 4px 12px oklch(0 0 0/.3);
+  --shadow-lg:0 12px 32px oklch(0 0 0/.4);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-surface-offset-2:#22211f;
+  --color-surface-dynamic:#2d2c2a;--color-divider:#262523;--color-border:#393836;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-primary:#4f98a3;--color-success:#6daa45;--color-error:#dd6974;
+  --color-success-highlight:#3a4435;--color-error-highlight:#574848;
+  --color-gold:#e8af34;--color-blue:#5591c7;
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{min-height:100dvh;font-family:var(--font-body);font-size:var(--tx-sm);color:var(--color-text);background:var(--color-bg);line-height:1.5}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
+table{border-collapse:collapse;width:100%}
+input,select,textarea{font:inherit;color:inherit}
+
+/* LAYOUT */
+.app-shell{display:flex;min-height:100dvh}
+.sidebar{width:240px;flex-shrink:0;background:var(--color-surface);border-right:1px solid var(--color-divider);display:flex;flex-direction:column;position:sticky;top:0;height:100dvh;overflow-y:auto}
+.main-content{flex:1;overflow-x:hidden;min-width:0}
+.topbar{position:sticky;top:0;z-index:10;background:var(--color-surface);border-bottom:1px solid var(--color-divider);padding:var(--s4) var(--s8);display:flex;align-items:center;justify-content:space-between;gap:var(--s4);box-shadow:var(--shadow-sm)}
+.page-content{padding:var(--s6) var(--s8);max-width:1280px}
+
+/* SIDEBAR */
+.sidebar-logo{padding:var(--s5);border-bottom:1px solid var(--color-divider);display:flex;align-items:center;gap:var(--s3)}
+.sidebar-logo-icon{width:32px;height:32px;background:var(--color-primary);border-radius:var(--radius-md);display:grid;place-items:center;flex-shrink:0}
+.sidebar-logo-text{font-size:var(--tx-sm);font-weight:600;line-height:1.2}
+.sidebar-logo-sub{font-size:var(--tx-xs);color:var(--color-text-muted)}
+.sidebar-nav{flex:1;padding:var(--s4) var(--s3)}
+.nav-section-label{font-size:var(--tx-xs);font-weight:600;color:var(--color-text-faint);letter-spacing:.08em;text-transform:uppercase;padding:var(--s3) var(--s3) var(--s2)}
+.nav-item{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s3);border-radius:var(--radius-md);font-size:var(--tx-sm);color:var(--color-text-muted);cursor:pointer;transition:all var(--trans);margin-bottom:2px}
+.nav-item:hover{background:var(--color-surface-offset);color:var(--color-text)}
+.nav-item.active{background:var(--color-primary-highlight);color:var(--color-primary);font-weight:500}
+.sidebar-footer{padding:var(--s4) var(--s3);border-top:1px solid var(--color-divider)}
+
+/* TOPBAR */
+.topbar-left{display:flex;flex-direction:column}
+.topbar-title{font-size:var(--tx-base);font-weight:600}
+.topbar-sub{font-size:var(--tx-xs);color:var(--color-text-muted)}
+.topbar-actions{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s4);border-radius:var(--radius-md);font-size:var(--tx-sm);font-weight:500;cursor:pointer;transition:all var(--trans);white-space:nowrap;border:1px solid transparent}
+.btn-primary{background:var(--color-primary);color:var(--color-text-inverse)}
+.btn-primary:hover{background:var(--color-primary-hover)}
+.btn-secondary{background:var(--color-blue);color:var(--color-text-inverse)}
+.btn-secondary:hover{background:#0b5177}
+.btn-ghost{color:var(--color-text-muted);border-color:var(--color-border);background:var(--color-surface-2)}
+.btn-ghost:hover{color:var(--color-text);background:var(--color-surface-offset)}
+.btn-danger{background:var(--color-error);color:#fff}
+.btn-danger:hover{background:var(--color-error-hover)}
+.btn-sm{padding:var(--s1) var(--s3);font-size:var(--tx-xs)}
+
+/* WEEK PILL */
+.week-pill{display:flex;align-items:center;gap:var(--s2);background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-full);padding:var(--s1) var(--s3);font-size:var(--tx-xs);font-weight:500;color:var(--color-text-muted)}
+.week-pill button{width:20px;height:20px;border-radius:var(--radius-full);display:grid;place-items:center;cursor:pointer;transition:background var(--trans)}
+.week-pill button:hover{background:var(--color-surface-dynamic)}
+#week-label{min-width:120px;text-align:center;color:var(--color-text);font-weight:600}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s4);margin-bottom:var(--s6)}
+.kpi-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--s5);box-shadow:var(--shadow-sm);transition:box-shadow var(--trans)}
+.kpi-card:hover{box-shadow:var(--shadow-md)}
+.kpi-label{font-size:var(--tx-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--s2)}
+.kpi-value{font-size:clamp(1.75rem,2vw,2.5rem);font-weight:700;font-variant-numeric:tabular-nums lining-nums;line-height:1;margin-bottom:var(--s1)}
+.kpi-delta{font-size:var(--tx-xs);color:var(--color-text-muted)}
+.kpi-card.primary .kpi-value{color:var(--color-primary)}
+.kpi-card.gold .kpi-value{color:var(--color-gold)}
+.kpi-card.blue .kpi-value{color:var(--color-blue)}
+
+/* PANEL */
+.panel{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:var(--s4) var(--s6);border-bottom:1px solid var(--color-divider)}
+.panel-title{font-size:var(--tx-sm);font-weight:600}
+.panel-body{padding:var(--s5) var(--s6)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);margin-bottom:var(--s4)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+.data-table{font-size:var(--tx-xs)}
+.data-table thead tr{border-bottom:2px solid var(--color-divider)}
+.data-table th{padding:var(--s3) var(--s4);text-align:left;font-weight:600;color:var(--color-text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.data-table td{padding:var(--s3) var(--s4);border-bottom:1px solid var(--color-divider);font-variant-numeric:tabular-nums;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tbody tr{transition:background var(--trans)}
+.data-table tbody tr:hover{background:var(--color-surface-offset)}
+.data-table .num{text-align:right;font-weight:500}
+.data-table .total-row{background:var(--color-surface-offset);font-weight:600}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:var(--s1);padding:2px var(--s2);border-radius:var(--radius-full);font-size:11px;font-weight:600;letter-spacing:.03em}
+.badge-green{background:var(--color-success-highlight);color:var(--color-success)}
+.badge-blue{background:var(--color-blue-highlight);color:var(--color-blue)}
+.badge-amber{background:var(--color-warning-highlight);color:var(--color-warning)}
+.badge-red{background:var(--color-error-highlight);color:var(--color-error)}
+
+/* FORMS */
+.form-group{display:flex;flex-direction:column;gap:var(--s2)}
+.form-label{font-size:var(--tx-xs);font-weight:600;color:var(--color-text-muted)}
+.form-input{padding:var(--s2) var(--s3);border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);font-size:var(--tx-sm);transition:border-color var(--trans),box-shadow var(--trans);width:100%}
+.form-input:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px color-mix(in oklch,var(--color-primary) 15%,transparent)}
+.form-input.highlight{background:color-mix(in oklch,var(--color-gold) 8%,var(--color-surface-2));border-color:var(--color-gold)}
+.form-select{padding:var(--s2) var(--s3);border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);font-size:var(--tx-sm);width:100%}
+
+/* INTAKE INPUT CARDS */
+.intake-input-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--s5);box-shadow:var(--shadow-sm);margin-bottom:var(--s4)}
+.intake-input-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--s4);gap:var(--s4)}
+.intake-code{font-size:var(--tx-sm);font-weight:700;color:var(--color-primary)}
+.intake-meta{font-size:var(--tx-xs);color:var(--color-text-muted);margin-top:2px}
+
+/* PERSON BARS */
+.person-bar-row{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;border-bottom:1px solid var(--color-divider)}
+.person-bar-row:last-child{border-bottom:none}
+.person-name{width:90px;flex-shrink:0;font-size:var(--tx-xs);color:var(--color-text-muted)}
+.person-bar-track{flex:1;height:8px;background:var(--color-surface-offset-2);border-radius:var(--radius-full);overflow:hidden}
+.person-bar-fill{height:100%;background:var(--color-primary);border-radius:var(--radius-full);transition:width .7s cubic-bezier(0.16,1,0.3,1)}
+.person-num{width:32px;text-align:right;font-size:var(--tx-xs);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:oklch(0.2 0 0/0.5);z-index:50;display:grid;place-items:center;padding:var(--s4);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s ease}
+.modal-backdrop.open{opacity:1;pointer-events:all}
+.modal{background:var(--color-surface);border-radius:var(--radius-xl);padding:var(--s6);max-width:520px;width:100%;max-height:calc(100dvh - 2rem);box-shadow:var(--shadow-lg);transform:translateY(12px);transition:transform .3s cubic-bezier(0.16,1,0.3,1);display:flex;flex-direction:column;overflow:hidden}
+.modal-backdrop.open .modal{transform:none}
+.modal-title{font-size:var(--tx-base);font-weight:700;margin-bottom:var(--s5)}
+.modal-footer{display:flex;gap:var(--s3);justify-content:flex-end;margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--color-divider);flex-shrink:0}
+.modal-lg{max-width:640px}
+#modal-intake-fields{flex:1;min-height:0;max-height:50dvh!important;overflow-y:auto!important;padding-right:var(--s1)}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:var(--s6);right:var(--s6);z-index:100;display:flex;flex-direction:column;gap:var(--s2);pointer-events:none}
+.toast{background:var(--color-text);color:var(--color-text-inverse);padding:var(--s3) var(--s5);border-radius:var(--radius-lg);font-size:var(--tx-sm);box-shadow:var(--shadow-lg);pointer-events:all;animation:toastIn .3s cubic-bezier(0.16,1,0.3,1)}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section-heading{font-size:var(--tx-base);font-weight:600;margin-bottom:var(--s4);display:flex;align-items:center;gap:var(--s2)}
+.section-hint{font-size:var(--tx-xs);color:var(--color-text-muted);font-weight:400}
+
+/* CHART */
+.chart-wrap{position:relative;width:100%}
+.chart-wrap canvas{width:100%!important}
+
+/* EMPTY */
+.empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--s16) var(--s8);color:var(--color-text-muted)}
+.empty-state h3{color:var(--color-text);margin-bottom:var(--s2);font-size:var(--tx-base)}
+
+/* DIVIDER */
+.field-divider{border:none;border-top:1px solid var(--color-divider);margin:var(--s4) 0}
+
+/* DELETE btn */
+.btn-row-del{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--radius-md);color:var(--color-text-faint);transition:all var(--trans)}
+.btn-row-del:hover{background:var(--color-error-highlight);color:var(--color-error)}
+
+@keyframes numUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.num-animate{animation:numUp .5s cubic-bezier(0.16,1,0.3,1) both}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .sidebar{width:56px}
+  .sidebar-logo-text,.sidebar-logo-sub,.nav-item span,.nav-section-label{display:none}
+  .sidebar-logo{padding:var(--s3);justify-content:center}
+  .nav-item{justify-content:center;padding:var(--s3)}
+  .kpi-grid{grid-template-columns:repeat(3,1fr)}
+  .two-col{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .page-content{padding:var(--s4)}
+  .topbar{padding:var(--s3) var(--s4)}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 3h18v4H3z"/><path d="M3 9h18v4H3z"/><path d="M3 15h12v4H3z"/><circle cx="20" cy="17" r="3" fill="white" stroke="none"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-text">Hot Leads</div>
+      <div class="sidebar-logo-sub">Intake Planning</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Views</div>
+    <div class="nav-item active" onclick="switchView('dashboard',this)">
+      <i data-lucide="layout-dashboard" style="width:16px;height:16px;flex-shrink:0"></i><span>Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="switchView('input',this)">
+      <i data-lucide="pencil" style="width:16px;height:16px;flex-shrink:0"></i><span>Sales Input</span>
+    </div>
+    <div class="nav-item" onclick="switchView('history',this)">
+      <i data-lucide="history" style="width:16px;height:16px;flex-shrink:0"></i><span>Weekly History</span>
+    </div>
+    <div class="nav-section-label" style="margin-top:var(--s4)">Tools</div>
+    <div class="nav-item" onclick="exportCSV()">
+      <i data-lucide="download" style="width:16px;height:16px;flex-shrink:0"></i><span>Export CSV</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn btn-ghost btn-sm" data-theme-toggle aria-label="Toggle theme" style="width:100%;justify-content:center">
+      <i data-lucide="sun" style="width:14px;height:14px;"></i><span>Theme</span>
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-content">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="topbar-title">Management Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">Hot leads overview for intake planning</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="week-pill">
+        <button onclick="changeWeek(-1)" aria-label="Prev week"><i data-lucide="chevron-left" style="width:14px;height:14px"></i></button>
+        <span id="week-label">Week of 30 Jun 2026</span>
+        <button onclick="changeWeek(1)" aria-label="Next week"><i data-lucide="chevron-right" style="width:14px;height:14px"></i></button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="refreshData()">
+        <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Refresh
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="openNewIntakeModal()">
+        <i data-lucide="plus-circle" style="width:14px;height:14px"></i> New Intake
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="openQuickSubmit()">
+        <i data-lucide="send" style="width:14px;height:14px"></i> Submit Leads
+      </button>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- ====== DASHBOARD VIEW ====== -->
+    <section id="view-dashboard">
+
+      <!-- KPI -->
+      <div class="kpi-grid">
+        <div class="kpi-card primary">
+          <div class="kpi-label">Total Hot Leads</div>
+          <div class="kpi-value num-animate" id="kpi-total">0</div>
+          <div class="kpi-delta" id="kpi-total-delta">All intakes combined</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-label">Total Intakes</div>
+          <div class="kpi-value num-animate" id="kpi-intakes">0</div>
+          <div class="kpi-delta">Active intake programmes</div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Hot Leads by Intake</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-wrap" style="height:260px">
+              <canvas id="chartByIntake"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Hot Leads by Salesperson</span>
+          </div>
+          <div class="panel-body" id="person-bars"></div>
+        </div>
+      </div>
+
+      <!-- INTAKE SUMMARY TABLE -->
+      <div class="panel" style="margin-bottom:var(--s4)">
+        <div class="panel-header">
+          <span class="panel-title">Intake Summary</span>
+          <div style="display:flex;gap:var(--s2);align-items:center">
+            <input type="text" class="form-input" placeholder="Search intake..." id="search-intake" oninput="filterTable()" style="width:180px;padding:var(--s1) var(--s3);font-size:var(--tx-xs)">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th onclick="sortTable('code')" style="cursor:pointer">Intake</th>
+                <th>Medium</th>
+                <th onclick="sortTable('soc')" style="cursor:pointer">SOC Date</th>
+                <th>PIC</th>
+                <th class="num" onclick="sortTable('leads')" style="cursor:pointer">Hot Leads</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="intake-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SALESPERSON DETAIL TABLE -->
+      <div class="panel" style="margin-bottom:var(--s4)">
+        <div class="panel-header">
+          <span class="panel-title">Salesperson Contribution Detail</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr id="person-thead"></tr></thead>
+            <tbody id="person-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ====== SALES INPUT VIEW ====== -->
+    <section id="view-input" style="display:none">
+      <div class="section-heading">
+        Sales Input
+        <span class="section-hint">- Select your name and enter hot leads for each intake</span>
+      </div>
+      <div class="panel" style="margin-bottom:var(--s6)">
+        <div class="panel-header"><span class="panel-title">Your Details</span></div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--s4)">
+            <div class="form-group">
+              <label class="form-label">Salesperson Name</label>
+              <select class="form-select" id="sel-name" onchange="buildInputForm()">
+                <option value="">Select your name</option>
+                <option>Angie</option><option>Lorna</option><option>Jiaojiao</option>
+                <option>May</option><option>Hui Zhen</option><option>Jia En</option><option>Yi Ting</option>
+                <option>Shi Xian</option><option>Qiao Rong</option><option>KayC</option>
+                <option>Yuan Bin</option><option>Jia Xuan</option><option>Si Ying</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Week Ending</label>
+              <input type="date" class="form-input" id="input-week" value="2026-07-03">
+            </div>
+            <div class="form-group" style="align-self:end">
+              <button class="btn btn-primary" onclick="submitLeads()" style="height:38px">
+                <i data-lucide="check-circle" style="width:14px;height:14px"></i> Submit All Leads
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="intake-input-list"></div>
+    </section>
+
+    <!-- ====== HISTORY VIEW ====== -->
+    <section id="view-history" style="display:none">
+      <div class="section-heading">Weekly Trend History</div>
+      <div class="panel" style="margin-bottom:var(--s4)">
+        <div class="panel-header"><span class="panel-title">Total Hot Leads Over Time</span></div>
+        <div class="panel-body">
+          <div class="chart-wrap" style="height:280px"><canvas id="chartHistory"></canvas></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Weekly Submission Log</span></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>Week Ending</th>
+              <th class="num">Total Hot Leads</th>
+              <th class="num">Intakes</th>
+            </tr></thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+
+<!-- QUICK SUBMIT MODAL -->
+<div class="modal-backdrop" id="modal-quick" onclick="closeModalOutside(event,'modal-quick')">
+  <div class="modal modal-lg">
+    <div class="modal-title">Quick Lead Submission</div>
+    <div class="form-group" style="margin-bottom:var(--s4)">
+      <label class="form-label">Your Name</label>
+      <select class="form-select" id="modal-person">
+        <option value="">Select name</option>
+        <option>Angie</option><option>Lorna</option><option>Jiaojiao</option>
+        <option>May</option><option>Hui Zhen</option><option>Jia En</option><option>Yi Ting</option>
+        <option>Shi Xian</option><option>Qiao Rong</option><option>KayC</option>
+        <option>Yuan Bin</option><option>Jia Xuan</option><option>Si Ying</option>
+      </select>
+    </div>
+    <div style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:var(--s3)" id="modal-intake-fields"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-quick')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitFromModal()">
+        <i data-lucide="check" style="width:14px;height:14px"></i> Submit
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW INTAKE MODAL -->
+<div class="modal-backdrop" id="modal-new-intake" onclick="closeModalOutside(event,'modal-new-intake')">
+  <div class="modal modal-lg">
+    <div class="modal-title">Add New Intake</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);margin-bottom:var(--s4)">
+      <div class="form-group">
+        <label class="form-label">Intake Code *</label>
+        <input type="text" class="form-input" id="ni-code" placeholder="e.g. WSQ-ACEY-E-FT-45">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Medium *</label>
+        <select class="form-select" id="ni-medium">
+          <option value="">Select</option>
+          <option>ECE</option><option>ECC</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">SOC Date *</label>
+        <input type="date" class="form-input" id="ni-soc">
+      </div>
+      <div class="form-group">
+        <label class="form-label">PIC (Person-in-Charge) *</label>
+        <select class="form-select" id="ni-pic">
+          <option value="">Select</option>
+          <option>Angie</option><option>Lorna</option><option>Jiaojiao</option>
+          <option>May</option><option>Hui Zhen</option><option>Jia En</option><option>Yi Ting</option>
+          <option>Shi Xian</option><option>Qiao Rong</option><option>KayC</option>
+          <option>Yuan Bin</option><option>Jia Xuan</option><option>Si Ying</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-intake')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewIntake()">
+        <i data-lucide="plus" style="width:14px;height:14px"></i> Add Intake
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE INTAKE CONFIRM -->
+<div class="modal-backdrop" id="modal-confirm-del" onclick="closeModalOutside(event,'modal-confirm-del')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">Remove Intake?</div>
+    <p style="font-size:var(--tx-sm);color:var(--color-text-muted);margin-bottom:var(--s2)">This will remove intake <strong id="del-intake-code"></strong> and all associated lead data.</p>
+    <p style="font-size:var(--tx-xs);color:var(--color-error)">This action cannot be undone.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm-del')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteIntake()">Remove Intake</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* DATA MODEL */
+let INTAKES = [
+  {code:'WSQ-HCIC-E-FT-23',     medium:'ECE', soc:'2026-08-13', pic:'Qiao Rong'},
+  {code:'WSQ-ACEY-C-PT-27',     medium:'ECC', soc:'2026-08-14', pic:'Shi Xian'},
+  {code:'WSQ-HCIC-E-PT-16',     medium:'ECE', soc:'2026-08-19', pic:'Yi Ting'},
+  {code:'WSQ-ACEY-C-FT-28',     medium:'ECC', soc:'2026-08-26', pic:'KayC'},
+  {code:'WSQ-PDECCE-TE-FT-41',  medium:'ECE', soc:'2026-09-08', pic:'Qiao Rong'},
+  {code:'WSQ-ACEY-E-FT-43',     medium:'ECE', soc:'2026-09-10', pic:'Jia Xuan'},
+  {code:'WSQ-ACEY-E-PT-28',     medium:'ECE', soc:'2026-09-16', pic:'Yuan Bin'},
+  {code:'WSQ-PDECCE-TC-FT-170', medium:'ECC', soc:'2026-09-22', pic:'Shi Xian'},
+  {code:'WSQ-HCIC-C-FT-23',     medium:'ECC', soc:'2026-10-02', pic:'Yuan Bin'},
+  {code:'WSQ-ACEY-E-FT-44',     medium:'ECE', soc:'2026-11-12', pic:'Qiao Rong'},
+  {code:'WSQ-ACECCE-E-PT-19',   medium:'ECE', soc:'2026-11-17', pic:'Jia Xuan'},
+];
+const SALES_TEAM = ['Angie','Lorna','Jiaojiao','May','Hui Zhen','Jia En','Yi Ting','Shi Xian','Qiao Rong','KayC','Yuan Bin','Jia Xuan','Si Ying'];
+
+const STORAGE_KEY = 'hotLeadsDashboardStateV1';
+// Paste your deployed Google Apps Script Web App URL here after setup.
+const CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycbxrByjDoTzQo9vemNLKPZW0uf1uJ3QgPjYZQ89ttC467fuop-kLOtmr_Ye2Mm13JBvzJg/exec';
+let cloudSaveTimer = null;
+let weeksData = {};
+
+function currentState(){
+  return {intakes: INTAKES, weeksData};
+}
+
+function applyState(state){
+  if(!state || typeof state !== 'object') return;
+  if(Array.isArray(state.intakes)) INTAKES = state.intakes;
+  if(state.weeksData && typeof state.weeksData === 'object') weeksData = state.weeksData;
+}
+
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState()));
+  queueCloudSave();
+}
+
+function loadState(){
+  try{
+    applyState(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+  } catch(err){
+    console.warn('Unable to load saved hot leads dashboard data.', err);
+  }
+}
+
+function cloudEnabled(){
+  return CLOUD_API_URL && CLOUD_API_URL.startsWith('https://');
+}
+
+function loadCloudState(){
+  if(!cloudEnabled()) return Promise.resolve(false);
+  return new Promise(resolve=>{
+    const callbackName = `hotLeadsCloudLoad_${Date.now()}`;
+    const script = document.createElement('script');
+    const cleanup = ()=>{
+      delete window[callbackName];
+      script.remove();
+    };
+    const timer = setTimeout(()=>{
+      cleanup();
+      console.warn('Google Sheet load timed out. Local saved data will be used.');
+      resolve(false);
+    }, 10000);
+
+    window[callbackName] = data=>{
+      clearTimeout(timer);
+      if(data && data.ok && data.state){
+        applyState(data.state);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState()));
+        cleanup();
+        resolve(true);
+        return;
+      }
+      cleanup();
+      resolve(false);
+    };
+
+    script.onerror = ()=>{
+      clearTimeout(timer);
+      cleanup();
+      console.warn('Unable to load Google Sheet data. Local saved data will be used.');
+      resolve(false);
+    };
+
+    script.src = `${CLOUD_API_URL}?action=load&callback=${callbackName}&t=${Date.now()}`;
+    document.body.appendChild(script);
+  });
+}
+
+function queueCloudSave(){
+  if(!cloudEnabled()) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(saveCloudState, 500);
+}
+
+async function saveCloudState(){
+  if(!cloudEnabled()) return;
+  try{
+    await fetch(CLOUD_API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({action: 'save', state: currentState(), savedAt: new Date().toISOString()})
+    });
+  } catch(err){
+    console.warn('Unable to save to Google Sheet. Local save is still available.', err);
+  }
+}
+let currentWeekOffset = 0;
+let sortState = {col:null,asc:true};
+let _filterText = '';
+let _currentMetrics = [];
+let _deleteTarget = null;
+let histChart = null, intakeChart = null;
+
+function safeCreateIcons(){
+  if(window.lucide && typeof window.lucide.createIcons === 'function'){
+    window.lucide.createIcons();
+  }
+}
+
+/* WEEK UTILS */
+function getWeekDate(offset){
+  const d = new Date('2026-06-30');
+  d.setDate(d.getDate() + offset*7);
+  return d;
+}
+function fmtDate(s){ return new Date(s).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}); }
+function getWeekKey(d){ return d.toISOString().slice(0,10); }
+function getCurrentWeekKey(){ return getWeekKey(getWeekDate(currentWeekOffset)); }
+function getWeekData(){
+  const k = getCurrentWeekKey();
+  if(!weeksData[k]) weeksData[k]={};
+  return weeksData[k];
+}
+function changeWeek(dir){
+  currentWeekOffset += dir;
+  const d = getWeekDate(currentWeekOffset);
+  document.getElementById('week-label').textContent = 'Week of '+fmtDate(d.toISOString().slice(0,10));
+  renderDashboard();
+}
+
+/* METRICS */
+function calcIntakeMetrics(weekData){
+  return INTAKES.map(intake=>{
+    const row = weekData[intake.code]||{};
+    const total = SALES_TEAM.reduce((s,p)=>s+(row[p]||0),0);
+    return {...intake, total, row};
+  });
+}
+function personTotals(metrics){
+  const t={};
+  SALES_TEAM.forEach(p=>{ t[p]=metrics.reduce((s,m)=>s+(m.row[p]||0),0); });
+  return t;
+}
+
+/* RENDER DASHBOARD */
+function animateNum(el,v){ el.classList.remove('num-animate'); void el.offsetWidth; el.classList.add('num-animate'); el.textContent=v; }
+
+function renderDashboard(){
+  const wd = getWeekData();
+  const metrics = calcIntakeMetrics(wd);
+  _currentMetrics = metrics;
+  const totalLeads = metrics.reduce((s,m)=>s+m.total,0);
+  animateNum(document.getElementById('kpi-total'), totalLeads);
+  animateNum(document.getElementById('kpi-intakes'), INTAKES.length);
+  renderIntakeTable();
+  renderPersonBars(personTotals(metrics), totalLeads);
+  renderPersonTable(metrics);
+  renderIntakeChart(metrics);
+}
+
+function renderIntakeTable(){
+  let rows = [..._currentMetrics];
+  if(_filterText) rows=rows.filter(m=>m.code.toLowerCase().includes(_filterText)||m.pic.toLowerCase().includes(_filterText)||m.medium.toLowerCase().includes(_filterText));
+  if(sortState.col==='code') rows.sort((a,b)=>sortState.asc?(a.code>b.code?1:-1):(a.code<b.code?1:-1));
+  else if(sortState.col==='soc') rows.sort((a,b)=>sortState.asc?(a.soc>b.soc?1:-1):(a.soc<b.soc?1:-1));
+  else if(sortState.col==='leads') rows.sort((a,b)=>sortState.asc?(a.total-b.total):(b.total-a.total));
+  const tbody = document.getElementById('intake-tbody');
+  tbody.innerHTML = rows.map(m=>`
+    <tr>
+      <td><span style="font-weight:600;font-size:11px;color:var(--color-primary)">${m.code}</span></td>
+      <td><span class="badge badge-amber">${m.medium}</span></td>
+      <td style="font-size:var(--tx-xs);white-space:nowrap">${fmtDate(m.soc)}</td>
+      <td style="font-size:var(--tx-xs)">${m.pic}</td>
+      <td class="num" style="font-weight:700">${m.total}</td>
+      <td><button class="btn-row-del" onclick="promptDeleteIntake('${m.code}')" title="Remove intake" aria-label="Remove intake ${m.code}"><i data-lucide="trash-2" style="width:13px;height:13px"></i></button></td>
+    </tr>`).join('');
+  const totLeads = rows.reduce((s,m)=>s+m.total,0);
+  tbody.innerHTML += `<tr class="total-row">
+    <td colspan="4" style="font-weight:700;font-size:var(--tx-xs)">TOTAL (${rows.length} intakes)</td>
+    <td class="num">${totLeads}</td>
+    <td></td>
+  </tr>`;
+  safeCreateIcons();
+}
+
+function renderPersonBars(pTotals, grand){
+  const container = document.getElementById('person-bars');
+  const sorted = [...SALES_TEAM].sort((a,b)=>pTotals[b]-pTotals[a]);
+  const max = Math.max(...Object.values(pTotals),1);
+  container.innerHTML = sorted.map(p=>{
+    const val = pTotals[p]||0;
+    const pct = Math.round((val/max)*100);
+    return `<div class="person-bar-row">
+      <div class="person-name">${p}</div>
+      <div class="person-bar-track"><div class="person-bar-fill" style="width:${pct}%"></div></div>
+      <div class="person-num">${val}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPersonTable(metrics){
+  const thead = document.getElementById('person-thead');
+  const tbody = document.getElementById('person-tbody');
+  thead.innerHTML = '<th>Intake</th>'+SALES_TEAM.map(p=>`<th class="num" style="font-size:10px;padding:var(--s2) var(--s3)">${p}</th>`).join('')+'<th class="num">Total</th>';
+  tbody.innerHTML = metrics.map(m=>{
+    const cells = SALES_TEAM.map(p=>{
+      const v=m.row[p]||0;
+      return `<td class="num" style="font-size:var(--tx-xs)">${v>0?`<span style="font-weight:600;color:var(--color-primary)">${v}</span>`:''}</td>`;
+    }).join('');
+    return `<tr><td style="font-size:10px;color:var(--color-primary);font-weight:600;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis">${m.code}</td>${cells}<td class="num" style="font-weight:700">${m.total}</td></tr>`;
+  }).join('');
+  const totals = SALES_TEAM.map(p=>metrics.reduce((s,m)=>s+(m.row[p]||0),0));
+  const grand = totals.reduce((a,b)=>a+b,0);
+  tbody.innerHTML += `<tr class="total-row"><td style="font-weight:700;font-size:var(--tx-xs)">TOTAL</td>${totals.map(v=>`<td class="num" style="font-weight:700">${v}</td>`).join('')}<td class="num" style="font-weight:700">${grand}</td></tr>`;
+}
+
+function renderIntakeChart(metrics){
+  if(!window.Chart) return;
+  const ctx = document.getElementById('chartByIntake').getContext('2d');
+  const style = getComputedStyle(document.documentElement);
+  const primary = style.getPropertyValue('--color-primary').trim();
+  if(intakeChart) intakeChart.destroy();
+  intakeChart = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: metrics.map(m=>m.code.replace('WSQ-','')),
+      datasets:[
+        {label:'Hot Leads',data:metrics.map(m=>m.total),backgroundColor:primary+'55',borderColor:primary,borderWidth:2,borderRadius:5,order:1}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#7a7974',font:{size:11}}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},color:'#7a7974',maxRotation:45}},
+        y:{grid:{color:'#dcd9d540'},ticks:{font:{size:11},color:'#7a7974'},beginAtZero:true}
+      },
+      animation:{duration:700,easing:'easeInOutQuart'}
+    }
+  });
+}
+
+/* HISTORY */
+function renderHistory(){
+  const entries = Object.entries(weeksData).map(([key,data])=>{
+    const m = calcIntakeMetrics(data);
+    return {key, total:m.reduce((s,x)=>s+x.total,0)};
+  }).sort((a,b)=>a.key>b.key?1:-1);
+  const tbody = document.getElementById('history-tbody');
+  if(!entries.length){
+    tbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:var(--s8);color:var(--color-text-muted)">No history yet. Submit leads to build history.</td></tr>';
+  } else {
+    tbody.innerHTML = entries.map(e=>`<tr>
+      <td style="font-size:var(--tx-xs)">${fmtDate(e.key)}</td>
+      <td class="num" style="font-weight:700">${e.total}</td>
+      <td class="num">${INTAKES.length}</td>
+    </tr>`).join('');
+  }
+  if(!window.Chart) return;
+  const ctx = document.getElementById('chartHistory').getContext('2d');
+  if(histChart) histChart.destroy();
+  histChart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:entries.map(e=>new Date(e.key).toLocaleDateString('en-SG',{day:'numeric',month:'short'})),
+      datasets:[{label:'Total Hot Leads',data:entries.map(e=>e.total),borderColor:'#01696f',backgroundColor:'#01696f22',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#01696f'}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#7a7974',font:{size:11}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#7a7974',font:{size:11}}},
+        y:{grid:{color:'#dcd9d540'},ticks:{color:'#7a7974',font:{size:11}},beginAtZero:true}
+      },
+      animation:{duration:800}
+    }
+  });
+}
+
+/* INPUT FORM */
+function buildInputForm(){
+  const person = document.getElementById('sel-name').value;
+  const wd = getWeekData();
+  const container = document.getElementById('intake-input-list');
+  container.innerHTML = INTAKES.map(intake=>{
+    const row = wd[intake.code]||{};
+    const val = person ? (row[person]||0) : '';
+    const total = SALES_TEAM.reduce((s,p)=>s+(row[p]||0),0);
+    return `<div class="intake-input-card">
+      <div class="intake-input-card-header">
+        <div>
+          <div class="intake-code">${intake.code}</div>
+          <div class="intake-meta">Medium: ${intake.medium} &nbsp;|&nbsp; SOC: ${fmtDate(intake.soc)} &nbsp;|&nbsp; PIC: ${intake.pic}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:var(--tx-xs);color:var(--color-text-muted)">Team Total</div>
+          <div style="font-size:var(--tx-lg);font-weight:700;color:var(--color-primary)">${total}</div>
+        </div>
+      </div>
+      <div class="form-group" style="max-width:240px">
+        <label class="form-label">Your Hot Leads (enter 0 if none)</label>
+        <input type="number" min="0" class="form-input highlight" placeholder="0"
+          id="inp-${intake.code}" value="${val}"
+          oninput="previewInput('${intake.code}',this.value)">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function previewInput(code,val){
+  const person = document.getElementById('sel-name').value;
+  if(!person) return;
+  const wd = getWeekData();
+  if(!wd[code]) wd[code]={};
+  wd[code][person] = parseInt(val)||0;
+  renderDashboard();
+  saveState();
+}
+
+function submitLeads(){
+  const person = document.getElementById('sel-name').value;
+  if(!person){ showToast('Please select your name first.'); return; }
+  weeksData[getCurrentWeekKey()] = weeksData[getCurrentWeekKey()]||{};
+  saveState();
+  showToast(`Leads submitted by ${person}!`);
+  renderHistory();
+}
+
+/* QUICK SUBMIT MODAL */
+function openQuickSubmit(){
+  const fields = document.getElementById('modal-intake-fields');
+  fields.innerHTML = INTAKES.map(intake=>{
+    const soc = new Date(intake.soc).toLocaleDateString('en-SG',{day:'numeric',month:'short'});
+    return `<div style="display:flex;align-items:center;gap:var(--s3)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:700;color:var(--color-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${intake.code}</div>
+        <div style="font-size:10px;color:var(--color-text-muted)">${soc} - ${intake.pic}</div>
+      </div>
+      <input type="number" min="0" class="form-input highlight" style="width:80px;text-align:center" placeholder="0" id="qinp-${intake.code}">
+    </div>`;
+  }).join('');
+  safeCreateIcons();
+  openModal('modal-quick');
+}
+
+function submitFromModal(){
+  const person = document.getElementById('modal-person').value;
+  if(!person){ showToast('Please select your name.'); return; }
+  const wd = getWeekData();
+  let count=0;
+  INTAKES.forEach(intake=>{
+    const inp = document.getElementById('qinp-'+intake.code);
+    const v = parseInt(inp?.value)||0;
+    if(!wd[intake.code]) wd[intake.code]={};
+    wd[intake.code][person] = v;
+    if(v>0) count++;
+  });
+  closeModal('modal-quick');
+  renderDashboard();
+  weeksData[getCurrentWeekKey()] = wd;
+  saveState();
+  showToast(`${person} submitted leads for ${count} intake(s).`);
+}
+
+/* NEW INTAKE MODAL */
+function openNewIntakeModal(){
+  document.getElementById('ni-code').value='';
+  document.getElementById('ni-medium').value='';
+  document.getElementById('ni-soc').value='';
+  document.getElementById('ni-pic').value='';
+  openModal('modal-new-intake');
+}
+
+function saveNewIntake(){
+  const code = document.getElementById('ni-code').value.trim().toUpperCase();
+  const medium = document.getElementById('ni-medium').value;
+  const soc = document.getElementById('ni-soc').value;
+  const pic = document.getElementById('ni-pic').value;
+  if(!code||!medium||!soc||!pic){ showToast('Please fill in all required fields.'); return; }
+  if(INTAKES.find(i=>i.code===code)){ showToast('Intake code already exists.'); return; }
+  INTAKES.push({code,medium,soc,pic});
+  closeModal('modal-new-intake');
+  renderDashboard();
+  saveState();
+  showToast(`Intake ${code} added successfully.`);
+}
+
+/* DELETE INTAKE */
+function promptDeleteIntake(code){
+  _deleteTarget = code;
+  document.getElementById('del-intake-code').textContent = code;
+  openModal('modal-confirm-del');
+}
+function confirmDeleteIntake(){
+  if(!_deleteTarget) return;
+  INTAKES = INTAKES.filter(i=>i.code!==_deleteTarget);
+  Object.values(weeksData).forEach(wd=>{ delete wd[_deleteTarget]; });
+  _deleteTarget=null;
+  closeModal('modal-confirm-del');
+  renderDashboard();
+  saveState();
+  showToast('Intake removed.');
+}
+
+/* FILTER / SORT */
+function filterTable(){
+  _filterText = document.getElementById('search-intake').value.toLowerCase();
+  renderIntakeTable();
+}
+function sortTable(col){
+  if(sortState.col===col) sortState.asc=!sortState.asc;
+  else { sortState.col=col; sortState.asc=true; }
+  renderIntakeTable();
+}
+
+/* VIEW SWITCH */
+function switchView(view,el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  ['dashboard','input','history'].forEach(v=>{ document.getElementById('view-'+v).style.display='none'; });
+  document.getElementById('view-'+view).style.display='block';
+  const titles = {dashboard:['Management Dashboard','Hot leads overview for intake planning'],input:['Sales Input','Enter your hot leads per intake'],history:['Weekly History','Trend analysis and historical submissions']};
+  document.getElementById('topbar-title').textContent = titles[view][0];
+  document.getElementById('topbar-sub').textContent = titles[view][1];
+  if(view==='dashboard') renderDashboard();
+  else if(view==='input') buildInputForm();
+  else if(view==='history') renderHistory();
+}
+
+/* MODAL HELPERS */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeModalOutside(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
+
+/* EXPORT CSV */
+function exportCSV(){
+  const metrics = calcIntakeMetrics(getWeekData());
+  const header = ['Intake','Medium','SOC Date','PIC',...SALES_TEAM,'Total Hot Leads'];
+  const rows = metrics.map(m=>[m.code,m.medium,m.soc,m.pic,...SALES_TEAM.map(p=>m.row[p]||0),m.total]);
+  const csv=[header,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`hot-leads-${getCurrentWeekKey()}.csv`; a.click();
+  showToast('CSV exported.');
+}
+
+/* REFRESH */
+function refreshData(){ renderDashboard(); showToast('Dashboard refreshed.'); }
+
+/* TOAST */
+function showToast(msg,dur=3000){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  const c=document.getElementById('toast-container'); c.appendChild(t);
+  setTimeout(()=>{ t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>c.removeChild(t),300); },dur);
+}
+
+/* THEME TOGGLE */
+(function(){
+  const r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);
+  const sun='<i data-lucide="sun" style="width:14px;height:14px"></i>';
+  const moon='<i data-lucide="moon" style="width:14px;height:14px"></i>';
+  const btn=document.querySelector('[data-theme-toggle]');
+  if(btn){
+    btn.addEventListener('click',()=>{
+      d=d==='dark'?'light':'dark'; r.setAttribute('data-theme',d);
+      btn.innerHTML=(d==='dark'?sun:moon)+'<span>Theme</span>';
+      safeCreateIcons();
+    });
+  }
+})();
+
+/* INIT */
+document.addEventListener('DOMContentLoaded', async ()=>{ loadState(); await loadCloudState(); safeCreateIcons(); renderDashboard(); });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+

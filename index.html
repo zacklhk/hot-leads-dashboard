@@ -276,7 +276,7 @@ input,select,textarea{font:inherit;color:inherit}
     <div class="topbar-actions">
       <div class="week-pill">
         <button onclick="changeWeek(-1)" aria-label="Prev week"><i data-lucide="chevron-left" style="width:14px;height:14px"></i></button>
-        <span id="week-label">Week of 30 Jun 2026</span>
+        <span id="week-label">Week of</span>
         <button onclick="changeWeek(1)" aria-label="Next week"><i data-lucide="chevron-right" style="width:14px;height:14px"></i></button>
       </div>
       <button class="btn btn-ghost btn-sm" onclick="refreshData()">
@@ -392,7 +392,7 @@ input,select,textarea{font:inherit;color:inherit}
             </div>
             <div class="form-group">
               <label class="form-label">Week Ending</label>
-              <input type="date" class="form-input" id="input-week" value="2026-07-03">
+              <input type="date" class="form-input" id="input-week">
             </div>
             <div class="form-group" style="align-self:end">
               <button class="btn btn-primary" onclick="submitLeads()" style="height:38px">
@@ -630,7 +630,7 @@ async function saveCloudState(){
   }
 }
 let currentWeekOffset = 0;
-let sortState = {col:null,asc:true};
+let sortState = {col:'soc',asc:true};
 let _filterText = '';
 let _currentMetrics = [];
 let _deleteTarget = null;
@@ -644,13 +644,34 @@ function safeCreateIcons(){
 
 /* WEEK UTILS */
 function getWeekDate(offset){
-  const d = new Date('2026-06-30');
+  const d = new Date();
+  d.setHours(0,0,0,0);
   d.setDate(d.getDate() + offset*7);
   return d;
 }
+function getWeekDisplayDate(d){
+  const display = new Date(d);
+  const day = display.getDay();
+  const daysFromMonday = (day + 6) % 7;
+  display.setDate(display.getDate() - daysFromMonday + 1);
+  return display;
+}
 function fmtDate(s){ return new Date(s).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}); }
-function getWeekKey(d){ return d.toISOString().slice(0,10); }
+function toLocalDateKey(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function getWeekKey(d){ return toLocalDateKey(getWeekDisplayDate(d)); }
 function getCurrentWeekKey(){ return getWeekKey(getWeekDate(currentWeekOffset)); }
+function updateWeekLabel(){
+  const d = getWeekDate(currentWeekOffset);
+  const displayDate = getWeekDisplayDate(d);
+  document.getElementById('week-label').textContent = 'Week of '+fmtDate(toLocalDateKey(displayDate));
+  const inputWeek = document.getElementById('input-week');
+  if(inputWeek) inputWeek.value = toLocalDateKey(displayDate);
+}
 function getWeekData(){
   const k = getCurrentWeekKey();
   if(!weeksData[k]) weeksData[k]={};
@@ -658,14 +679,21 @@ function getWeekData(){
 }
 function changeWeek(dir){
   currentWeekOffset += dir;
-  const d = getWeekDate(currentWeekOffset);
-  document.getElementById('week-label').textContent = 'Week of '+fmtDate(d.toISOString().slice(0,10));
+  updateWeekLabel();
   renderDashboard();
 }
 
 /* METRICS */
+function sortBySocDate(rows){
+  return [...rows].sort((a,b)=>{
+    const dateCompare = new Date(a.soc) - new Date(b.soc);
+    if(dateCompare !== 0) return dateCompare;
+    return String(a.code).localeCompare(String(b.code));
+  });
+}
+
 function calcIntakeMetrics(weekData){
-  return INTAKES.map(intake=>{
+  return sortBySocDate(INTAKES).map(intake=>{
     const row = weekData[intake.code]||{};
     const total = SALES_TEAM.reduce((s,p)=>s+(row[p]||0),0);
     return {...intake, total, row};
@@ -681,6 +709,7 @@ function personTotals(metrics){
 function animateNum(el,v){ el.classList.remove('num-animate'); void el.offsetWidth; el.classList.add('num-animate'); el.textContent=v; }
 
 function renderDashboard(){
+  updateWeekLabel();
   const wd = getWeekData();
   const metrics = calcIntakeMetrics(wd);
   _currentMetrics = metrics;
@@ -696,9 +725,7 @@ function renderDashboard(){
 function renderIntakeTable(){
   let rows = [..._currentMetrics];
   if(_filterText) rows=rows.filter(m=>m.code.toLowerCase().includes(_filterText)||m.pic.toLowerCase().includes(_filterText)||m.medium.toLowerCase().includes(_filterText));
-  if(sortState.col==='code') rows.sort((a,b)=>sortState.asc?(a.code>b.code?1:-1):(a.code<b.code?1:-1));
-  else if(sortState.col==='soc') rows.sort((a,b)=>sortState.asc?(a.soc>b.soc?1:-1):(a.soc<b.soc?1:-1));
-  else if(sortState.col==='leads') rows.sort((a,b)=>sortState.asc?(a.total-b.total):(b.total-a.total));
+  rows = sortBySocDate(rows);
   const tbody = document.getElementById('intake-tbody');
   tbody.innerHTML = rows.map(m=>`
     <tr>
@@ -751,6 +778,7 @@ function renderPersonTable(metrics){
 
 function renderIntakeChart(metrics){
   if(!window.Chart) return;
+  const sortedMetrics = sortBySocDate(metrics);
   const ctx = document.getElementById('chartByIntake').getContext('2d');
   const style = getComputedStyle(document.documentElement);
   const primary = style.getPropertyValue('--color-primary').trim();
@@ -758,9 +786,9 @@ function renderIntakeChart(metrics){
   intakeChart = new Chart(ctx,{
     type:'bar',
     data:{
-      labels: metrics.map(m=>m.code.replace('WSQ-','')),
+      labels: sortedMetrics.map(m=>m.code.replace('WSQ-','')),
       datasets:[
-        {label:'Hot Leads',data:metrics.map(m=>m.total),backgroundColor:primary+'55',borderColor:primary,borderWidth:2,borderRadius:5,order:1}
+        {label:'Hot Leads',data:sortedMetrics.map(m=>m.total),backgroundColor:primary+'55',borderColor:primary,borderWidth:2,borderRadius:5,order:1}
       ]
     },
     options:{
@@ -1011,6 +1039,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{ loadState(); await loa
 </script>
 </body>
 </html>
+
+
 
 
 

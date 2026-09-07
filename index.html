@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -113,7 +113,7 @@ input,select,textarea{font:inherit;color:inherit}
 .week-pill{display:flex;align-items:center;gap:var(--s2);background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-full);padding:var(--s1) var(--s3);font-size:var(--tx-xs);font-weight:500;color:var(--color-text-muted)}
 .week-pill button{width:20px;height:20px;border-radius:var(--radius-full);display:grid;place-items:center;cursor:pointer;transition:background var(--trans)}
 .week-pill button:hover{background:var(--color-surface-dynamic)}
-#week-label{min-width:120px;text-align:center;color:var(--color-text);font-weight:600}
+#week-label{min-width:190px;white-space:nowrap;text-align:center;color:var(--color-text);font-weight:600}
 
 /* KPI */
 .kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s4);margin-bottom:var(--s6)}
@@ -211,6 +211,16 @@ input,select,textarea{font:inherit;color:inherit}
 @keyframes numUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .num-animate{animation:numUp .5s cubic-bezier(0.16,1,0.3,1) both}
 
+/* ADMIN LOGIN AND ACCESS */
+.login-screen{position:fixed;inset:0;z-index:300;background:linear-gradient(145deg,var(--color-bg),var(--color-primary-highlight));display:grid;place-items:center;padding:var(--s4)}
+.login-screen.hidden{display:none}
+.login-card{width:min(440px,100%);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);padding:var(--s8)}
+.login-title{font-size:var(--tx-lg);font-weight:700;margin-bottom:var(--s1)}
+.login-sub{font-size:var(--tx-xs);color:var(--color-text-muted);margin-bottom:var(--s5)}
+.login-error{min-height:20px;margin-top:var(--s2);font-size:var(--tx-xs);color:var(--color-error)}
+.session-user{display:flex;align-items:center;gap:var(--s2);padding:var(--s1) var(--s3);border:1px solid var(--color-border);border-radius:var(--radius-full);font-size:var(--tx-xs);font-weight:600;color:var(--color-primary)}
+.action-group{display:flex;gap:var(--s1);justify-content:flex-end}
+.status-note{font-size:var(--tx-xs);color:var(--color-text-muted)}
 /* RESPONSIVE */
 @media(max-width:1024px){
   .sidebar{width:56px}
@@ -228,6 +238,17 @@ input,select,textarea{font:inherit;color:inherit}
 </style>
 </head>
 <body>
+<div class="login-screen hidden" id="admin-login-screen">
+  <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="admin-login-title">
+    <div class="login-title" id="admin-login-title">System Administrator Login</div>
+    <div class="login-sub">Administrator access is required to add intakes, change SOC dates, or archive intakes.</div>
+    <form onsubmit="adminLogin(event)">
+      <div class="form-group"><label class="form-label" for="admin-password">Password</label><input type="password" class="form-input" id="admin-password" autocomplete="current-password" required></div>
+      <div class="login-error" id="admin-login-error" aria-live="polite"></div>
+      <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeAdminLogin()">Cancel</button><button type="submit" class="btn btn-primary"><i data-lucide="log-in" style="width:14px;height:14px"></i> Login</button></div>
+    </form>
+  </div>
+</div>
 <div class="app-shell">
 
 <!-- SIDEBAR -->
@@ -274,6 +295,9 @@ input,select,textarea{font:inherit;color:inherit}
       <div class="topbar-sub" id="topbar-sub">Hot leads overview for intake planning</div>
     </div>
     <div class="topbar-actions">
+      <div class="session-user" title="Current access type"><i data-lucide="user-round" style="width:14px;height:14px"></i><span id="session-user-label">Sales User</span></div>
+      <button class="btn btn-ghost btn-sm" id="btn-admin-login" onclick="openAdminLogin()"><i data-lucide="lock-keyhole" style="width:14px;height:14px"></i> Administrator Login</button>
+      <button class="btn btn-ghost btn-sm" id="btn-admin-logout" onclick="adminLogout()" style="display:none"><i data-lucide="log-out" style="width:14px;height:14px"></i> Logout</button>
       <div class="week-pill">
         <button onclick="changeWeek(-1)" aria-label="Prev week"><i data-lucide="chevron-left" style="width:14px;height:14px"></i></button>
         <span id="week-label">Week of</span>
@@ -282,7 +306,7 @@ input,select,textarea{font:inherit;color:inherit}
       <button class="btn btn-ghost btn-sm" onclick="refreshData()">
         <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Refresh
       </button>
-      <button class="btn btn-secondary btn-sm" onclick="openNewIntakeModal()">
+      <button class="btn btn-secondary btn-sm" id="btn-new-intake" onclick="openNewIntakeModal()" style="display:none">
         <i data-lucide="plus-circle" style="width:14px;height:14px"></i> New Intake
       </button>
       <button class="btn btn-primary btn-sm" onclick="openQuickSubmit()">
@@ -347,7 +371,7 @@ input,select,textarea{font:inherit;color:inherit}
                 <th onclick="sortTable('soc')" style="cursor:pointer">SOC Date</th>
                 <th>PIC</th>
                 <th class="num" onclick="sortTable('leads')" style="cursor:pointer">Hot Leads</th>
-                <th style="width:40px"></th>
+                <th style="width:84px">Actions</th>
               </tr>
             </thead>
             <tbody id="intake-tbody"></tbody>
@@ -501,15 +525,26 @@ input,select,textarea{font:inherit;color:inherit}
   </div>
 </div>
 
+<!-- CHANGE INTAKE SOC DATE -->
+<div class="modal-backdrop" id="modal-change-date" onclick="closeModalOutside(event,'modal-change-date')">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">Change Intake SOC Date</div>
+    <input type="hidden" id="cd-code">
+    <div class="form-group"><label class="form-label">Intake</label><input class="form-input" id="cd-code-display" disabled></div>
+    <div class="form-group" style="margin-top:var(--s4)"><label class="form-label">New SOC Date *</label><input type="date" class="form-input" id="cd-soc"></div>
+    <p class="status-note" style="margin-top:var(--s3)">The intake will hide 14 days before the revised SOC date. Historical lead data will remain unchanged.</p>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-change-date')">Cancel</button><button class="btn btn-primary" onclick="saveIntakeDate()">Save Date</button></div>
+  </div>
+</div>
 <!-- DELETE INTAKE CONFIRM -->
 <div class="modal-backdrop" id="modal-confirm-del" onclick="closeModalOutside(event,'modal-confirm-del')">
   <div class="modal" style="max-width:400px">
-    <div class="modal-title">Remove Intake?</div>
-    <p style="font-size:var(--tx-sm);color:var(--color-text-muted);margin-bottom:var(--s2)">This will remove intake <strong id="del-intake-code"></strong> and all associated lead data.</p>
-    <p style="font-size:var(--tx-xs);color:var(--color-error)">This action cannot be undone.</p>
+    <div class="modal-title">Archive Intake?</div>
+    <p style="font-size:var(--tx-sm);color:var(--color-text-muted);margin-bottom:var(--s2)">This will hide intake <strong id="del-intake-code"></strong> from active screens. Historical lead data will remain.</p>
+    <p style="font-size:var(--tx-xs);color:var(--color-error)">Only the System Administrator can perform this action.</p>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-confirm-del')">Cancel</button>
-      <button class="btn btn-danger" onclick="confirmDeleteIntake()">Remove Intake</button>
+      <button class="btn btn-danger" onclick="confirmDeleteIntake()">Archive Intake</button>
     </div>
   </div>
 </div>
@@ -537,20 +572,28 @@ let INTAKES = [
 ];
 const SALES_TEAM = ['Angie','Lorna','Jiaojiao','May','Hui Zhen','Jia En','Yi Ting','Shi Xian','Qiao Rong','KayC','Yuan Bin','Jia Xuan','Si Ying'];
 
-const STORAGE_KEY = 'hotLeadsDashboardStateV1';
+const STORAGE_KEY='hotLeadsDashboardStateV2';
+const LEGACY_STORAGE_KEY='hotLeadsDashboardStateV1';
+const AUTO_HIDE_DAYS_BEFORE_SOC=14;
+const ADMIN_SESSION_KEY='hotLeadsAdminSession';
+const ADMIN_PASSWORD_HASH='8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // Default test password: admin
 // Paste your deployed Google Apps Script Web App URL here after setup.
 const CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycbxrByjDoTzQo9vemNLKPZW0uf1uJ3QgPjYZQ89ttC467fuop-kLOtmr_Ye2Mm13JBvzJg/exec';
 let cloudSaveTimer = null;
 let weeksData = {};
+let submissionLog = {};
+let auditLog = [];
 
 function currentState(){
-  return {intakes: INTAKES, weeksData};
+  return {schemaVersion:2,intakes:INTAKES,weeksData,submissionLog,auditLog,updatedAt:new Date().toISOString()};
 }
 
 function applyState(state){
   if(!state || typeof state !== 'object') return;
-  if(Array.isArray(state.intakes)) INTAKES = state.intakes;
-  if(state.weeksData && typeof state.weeksData === 'object') weeksData = state.weeksData;
+  if(Array.isArray(state.intakes)) INTAKES=state.intakes.map(i=>({...i,active:i.active!==false,archivedAt:i.archivedAt||null,archivedBy:i.archivedBy||null}));
+  if(state.weeksData&&typeof state.weeksData==='object') weeksData=state.weeksData;
+  if(state.submissionLog&&typeof state.submissionLog==='object') submissionLog=state.submissionLog;
+  if(Array.isArray(state.auditLog)) auditLog=state.auditLog;
 }
 
 function saveState(){
@@ -560,7 +603,7 @@ function saveState(){
 
 function loadState(){
   try{
-    applyState(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+    applyState(JSON.parse(localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY)||'{}'));
   } catch(err){
     console.warn('Unable to load saved hot leads dashboard data.', err);
   }
@@ -657,6 +700,14 @@ function getWeekDisplayDate(d){
   return display;
 }
 function fmtDate(s){ return new Date(s).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtWeekDate(d){ return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }
+function getSalesWeekRange(d){
+  const monday=new Date(d); monday.setHours(0,0,0,0);
+  const daysFromMonday=(monday.getDay()+6)%7;
+  monday.setDate(monday.getDate()-daysFromMonday);
+  const friday=new Date(monday); friday.setDate(monday.getDate()+4);
+  return {monday,friday};
+}
 function toLocalDateKey(d){
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');
@@ -666,11 +717,11 @@ function toLocalDateKey(d){
 function getWeekKey(d){ return toLocalDateKey(getWeekDisplayDate(d)); }
 function getCurrentWeekKey(){ return getWeekKey(getWeekDate(currentWeekOffset)); }
 function updateWeekLabel(){
-  const d = getWeekDate(currentWeekOffset);
-  const displayDate = getWeekDisplayDate(d);
-  document.getElementById('week-label').textContent = 'Week of '+fmtDate(toLocalDateKey(displayDate));
-  const inputWeek = document.getElementById('input-week');
-  if(inputWeek) inputWeek.value = toLocalDateKey(displayDate);
+  const d=getWeekDate(currentWeekOffset);
+  const {monday,friday}=getSalesWeekRange(d);
+  document.getElementById('week-label').textContent=`${fmtWeekDate(monday)} to ${fmtWeekDate(friday)}`;
+  const inputWeek=document.getElementById('input-week');
+  if(inputWeek) inputWeek.value=toLocalDateKey(monday);
 }
 function getWeekData(){
   const k = getCurrentWeekKey();
@@ -683,6 +734,20 @@ function changeWeek(dir){
   renderDashboard();
 }
 
+/* ADMIN ACCESS, VISIBILITY AND AUDIT */
+function isAdmin(){return sessionStorage.getItem(ADMIN_SESSION_KEY)==='true';}
+async function sha256(value){const bytes=new TextEncoder().encode(value);const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');}
+function openAdminLogin(){document.getElementById('admin-login-error').textContent='';document.getElementById('admin-password').value='';document.getElementById('admin-login-screen').classList.remove('hidden');setTimeout(()=>document.getElementById('admin-password').focus(),0);safeCreateIcons();}
+function closeAdminLogin(){document.getElementById('admin-login-screen').classList.add('hidden');}
+async function adminLogin(event){event.preventDefault();const hash=await sha256(document.getElementById('admin-password').value);if(hash!==ADMIN_PASSWORD_HASH){document.getElementById('admin-login-error').textContent='Incorrect password.';document.getElementById('admin-password').select();return;}sessionStorage.setItem(ADMIN_SESSION_KEY,'true');closeAdminLogin();applyAccess();renderDashboard();showToast('System Administrator login successful.');}
+function adminLogout(){sessionStorage.removeItem(ADMIN_SESSION_KEY);applyAccess();renderDashboard();showToast('Administrator logged out.');}
+function requireAdmin(){if(isAdmin())return true;showToast('System Administrator login required.');openAdminLogin();return false;}
+function applyAccess(){const admin=isAdmin();const add=document.getElementById('btn-new-intake');if(add)add.style.display=admin?'inline-flex':'none';document.getElementById('btn-admin-login').style.display=admin?'none':'inline-flex';document.getElementById('btn-admin-logout').style.display=admin?'inline-flex':'none';document.getElementById('session-user-label').textContent=admin?'System Administrator':'Sales User';safeCreateIcons();}
+function parseLocalDate(value){const [y,m,d]=String(value).split('-').map(Number);return new Date(y,m-1,d,0,0,0,0);}
+function isVisibleIntake(intake,referenceDate=new Date()){const today=new Date(referenceDate);today.setHours(0,0,0,0);const hideFrom=parseLocalDate(intake.soc);hideFrom.setDate(hideFrom.getDate()-AUTO_HIDE_DAYS_BEFORE_SOC);return intake.active!==false&&today<hideFrom;}
+function activeIntakes(){return sortBySocDate(INTAKES.filter(i=>isVisibleIntake(i)));}
+function addAudit(action,code,previousValue,newValue){auditLog.push({action,intakeCode:code,performedBy:'System Administrator',performedAt:new Date().toISOString(),previousValue:previousValue||null,newValue:newValue||null});}
+function recordSubmission(person,source){const key=getCurrentWeekKey();submissionLog[key]=submissionLog[key]||{};submissionLog[key][person]={submittedAt:new Date().toISOString(),source};}
 /* METRICS */
 function sortBySocDate(rows){
   return [...rows].sort((a,b)=>{
@@ -693,12 +758,13 @@ function sortBySocDate(rows){
 }
 
 function calcIntakeMetrics(weekData){
-  return sortBySocDate(INTAKES).map(intake=>{
+  return activeIntakes().map(intake=>{
     const row = weekData[intake.code]||{};
     const total = SALES_TEAM.reduce((s,p)=>s+(row[p]||0),0);
     return {...intake, total, row};
   });
 }
+function calcHistoricalMetrics(weekData){return sortBySocDate(INTAKES).map(intake=>{const row=weekData[intake.code]||{};const total=SALES_TEAM.reduce((sum,p)=>sum+(row[p]||0),0);return {...intake,total,row};});}
 function personTotals(metrics){
   const t={};
   SALES_TEAM.forEach(p=>{ t[p]=metrics.reduce((s,m)=>s+(m.row[p]||0),0); });
@@ -715,7 +781,7 @@ function renderDashboard(){
   _currentMetrics = metrics;
   const totalLeads = metrics.reduce((s,m)=>s+m.total,0);
   animateNum(document.getElementById('kpi-total'), totalLeads);
-  animateNum(document.getElementById('kpi-intakes'), INTAKES.length);
+  animateNum(document.getElementById('kpi-intakes'), activeIntakes().length);
   renderIntakeTable();
   renderPersonBars(personTotals(metrics), totalLeads);
   renderPersonTable(metrics);
@@ -734,7 +800,7 @@ function renderIntakeTable(){
       <td style="font-size:var(--tx-xs);white-space:nowrap">${fmtDate(m.soc)}</td>
       <td style="font-size:var(--tx-xs)">${m.pic}</td>
       <td class="num" style="font-weight:700">${m.total}</td>
-      <td><button class="btn-row-del" onclick="promptDeleteIntake('${m.code}')" title="Remove intake" aria-label="Remove intake ${m.code}"><i data-lucide="trash-2" style="width:13px;height:13px"></i></button></td>
+      <td>${isAdmin()?`<div class="action-group"><button class="btn-row-del" onclick="openChangeDate('${m.code}')" title="Change SOC date" aria-label="Change SOC date ${m.code}"><i data-lucide="calendar-cog" style="width:13px;height:13px"></i></button><button class="btn-row-del" onclick="promptDeleteIntake('${m.code}')" title="Archive intake" aria-label="Archive intake ${m.code}"><i data-lucide="archive" style="width:13px;height:13px"></i></button></div>`:''}</td>
     </tr>`).join('');
   const totLeads = rows.reduce((s,m)=>s+m.total,0);
   tbody.innerHTML += `<tr class="total-row">
@@ -806,7 +872,7 @@ function renderIntakeChart(metrics){
 /* HISTORY */
 function renderHistory(){
   const entries = Object.entries(weeksData).map(([key,data])=>{
-    const m = calcIntakeMetrics(data);
+    const m = calcHistoricalMetrics(data);
     return {key, total:m.reduce((s,x)=>s+x.total,0)};
   }).sort((a,b)=>a.key>b.key?1:-1);
   const tbody = document.getElementById('history-tbody');
@@ -845,7 +911,7 @@ function buildInputForm(){
   const person = document.getElementById('sel-name').value;
   const wd = getWeekData();
   const container = document.getElementById('intake-input-list');
-  container.innerHTML = INTAKES.map(intake=>{
+  container.innerHTML = activeIntakes().map(intake=>{
     const row = wd[intake.code]||{};
     const val = person ? (row[person]||0) : '';
     const total = SALES_TEAM.reduce((s,p)=>s+(row[p]||0),0);
@@ -884,6 +950,7 @@ function submitLeads(){
   const person = document.getElementById('sel-name').value;
   if(!person){ showToast('Please select your name first.'); return; }
   weeksData[getCurrentWeekKey()] = weeksData[getCurrentWeekKey()]||{};
+  recordSubmission(person,'Sales Input');
   saveState();
   showToast(`Leads submitted by ${person}!`);
   renderHistory();
@@ -892,7 +959,7 @@ function submitLeads(){
 /* QUICK SUBMIT MODAL */
 function openQuickSubmit(){
   const fields = document.getElementById('modal-intake-fields');
-  fields.innerHTML = INTAKES.map(intake=>{
+  fields.innerHTML = activeIntakes().map(intake=>{
     const soc = new Date(intake.soc).toLocaleDateString('en-SG',{day:'numeric',month:'short'});
     return `<div style="display:flex;align-items:center;gap:var(--s3)">
       <div style="flex:1;min-width:0">
@@ -911,7 +978,7 @@ function submitFromModal(){
   if(!person){ showToast('Please select your name.'); return; }
   const wd = getWeekData();
   let count=0;
-  INTAKES.forEach(intake=>{
+  activeIntakes().forEach(intake=>{
     const inp = document.getElementById('qinp-'+intake.code);
     const v = parseInt(inp?.value)||0;
     if(!wd[intake.code]) wd[intake.code]={};
@@ -921,12 +988,14 @@ function submitFromModal(){
   closeModal('modal-quick');
   renderDashboard();
   weeksData[getCurrentWeekKey()] = wd;
+  recordSubmission(person,'Quick Submit');
   saveState();
   showToast(`${person} submitted leads for ${count} intake(s).`);
 }
 
 /* NEW INTAKE MODAL */
 function openNewIntakeModal(){
+  if(!requireAdmin()) return;
   document.getElementById('ni-code').value='';
   document.getElementById('ni-medium').value='';
   document.getElementById('ni-soc').value='';
@@ -935,34 +1004,41 @@ function openNewIntakeModal(){
 }
 
 function saveNewIntake(){
+  if(!requireAdmin()) return;
   const code = document.getElementById('ni-code').value.trim().toUpperCase();
   const medium = document.getElementById('ni-medium').value;
   const soc = document.getElementById('ni-soc').value;
   const pic = document.getElementById('ni-pic').value;
   if(!code||!medium||!soc||!pic){ showToast('Please fill in all required fields.'); return; }
   if(INTAKES.find(i=>i.code===code)){ showToast('Intake code already exists.'); return; }
-  INTAKES.push({code,medium,soc,pic});
+  const intake={code,medium,soc,pic,active:true,createdAt:new Date().toISOString(),createdBy:'System Administrator'};INTAKES.push(intake);addAudit('INTAKE_CREATED',code,null,intake);
   closeModal('modal-new-intake');
   renderDashboard();
   saveState();
   showToast(`Intake ${code} added successfully.`);
 }
 
+/* CHANGE INTAKE SOC DATE */
+function openChangeDate(code){if(!requireAdmin())return;const intake=INTAKES.find(i=>i.code===code);if(!intake)return;document.getElementById('cd-code').value=code;document.getElementById('cd-code-display').value=code;document.getElementById('cd-soc').value=intake.soc;openModal('modal-change-date');}
+function saveIntakeDate(){if(!requireAdmin())return;const code=document.getElementById('cd-code').value;const newSoc=document.getElementById('cd-soc').value;const index=INTAKES.findIndex(i=>i.code===code);if(index<0||!newSoc){showToast('Please select a valid SOC date.');return;}const previous={...INTAKES[index]};INTAKES[index]={...INTAKES[index],soc:newSoc,updatedAt:new Date().toISOString(),updatedBy:'System Administrator'};addAudit('INTAKE_SOC_DATE_CHANGED',code,previous,INTAKES[index]);closeModal('modal-change-date');saveState();renderDashboard();buildInputForm();showToast(`SOC date for ${code} changed to ${fmtDate(newSoc)}.`);}
 /* DELETE INTAKE */
 function promptDeleteIntake(code){
+  if(!requireAdmin()) return;
   _deleteTarget = code;
   document.getElementById('del-intake-code').textContent = code;
   openModal('modal-confirm-del');
 }
 function confirmDeleteIntake(){
   if(!_deleteTarget) return;
-  INTAKES = INTAKES.filter(i=>i.code!==_deleteTarget);
-  Object.values(weeksData).forEach(wd=>{ delete wd[_deleteTarget]; });
+  if(!requireAdmin()) return;
+  const code=_deleteTarget;const index=INTAKES.findIndex(i=>i.code===code);const previous=index>=0?{...INTAKES[index]}:null;
+  if(index>=0)INTAKES[index]={...INTAKES[index],active:false,archivedAt:new Date().toISOString(),archivedBy:'System Administrator'};
+  addAudit('INTAKE_ARCHIVED',code,previous,index>=0?INTAKES[index]:null);
   _deleteTarget=null;
   closeModal('modal-confirm-del');
   renderDashboard();
   saveState();
-  showToast('Intake removed.');
+  showToast('Intake archived. Historical data was preserved.');
 }
 
 /* FILTER / SORT */
@@ -1035,7 +1111,7 @@ function showToast(msg,dur=3000){
 })();
 
 /* INIT */
-document.addEventListener('DOMContentLoaded', async ()=>{ loadState(); await loadCloudState(); safeCreateIcons(); renderDashboard(); });
+document.addEventListener('DOMContentLoaded',async()=>{loadState();await loadCloudState();applyAccess();safeCreateIcons();renderDashboard();});
 </script>
 </body>
 </html>

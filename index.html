@@ -213,14 +213,10 @@ input,select,textarea{font:inherit;color:inherit}
 
 /* ADMIN LOGIN AND ACCESS */
 .login-screen{position:fixed;inset:0;z-index:300;background:linear-gradient(145deg,var(--color-bg),var(--color-primary-highlight));display:grid;place-items:center;padding:var(--s4)}
-.login-screen.hidden{display:none}
-.login-card{width:min(440px,100%);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);padding:var(--s8)}
-.login-title{font-size:var(--tx-lg);font-weight:700;margin-bottom:var(--s1)}
-.login-sub{font-size:var(--tx-xs);color:var(--color-text-muted);margin-bottom:var(--s5)}
-.login-error{min-height:20px;margin-top:var(--s2);font-size:var(--tx-xs);color:var(--color-error)}
+.login-screen.hidden{display:none}.login-card{width:min(440px,100%);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);padding:var(--s8)}
+.login-title{font-size:var(--tx-lg);font-weight:700;margin-bottom:var(--s1)}.login-sub{font-size:var(--tx-xs);color:var(--color-text-muted);margin-bottom:var(--s5)}.login-error{min-height:20px;margin-top:var(--s2);font-size:var(--tx-xs);color:var(--color-error)}
 .session-user{display:flex;align-items:center;gap:var(--s2);padding:var(--s1) var(--s3);border:1px solid var(--color-border);border-radius:var(--radius-full);font-size:var(--tx-xs);font-weight:600;color:var(--color-primary)}
-.action-group{display:flex;gap:var(--s1);justify-content:flex-end}
-.status-note{font-size:var(--tx-xs);color:var(--color-text-muted)}
+.action-group{display:flex;gap:var(--s1);justify-content:flex-end}.status-note{font-size:var(--tx-xs);color:var(--color-text-muted)}
 /* RESPONSIVE */
 @media(max-width:1024px){
   .sidebar{width:56px}
@@ -528,11 +524,10 @@ input,select,textarea{font:inherit;color:inherit}
 <!-- CHANGE INTAKE SOC DATE -->
 <div class="modal-backdrop" id="modal-change-date" onclick="closeModalOutside(event,'modal-change-date')">
   <div class="modal" style="max-width:440px">
-    <div class="modal-title">Change Intake SOC Date</div>
-    <input type="hidden" id="cd-code">
+    <div class="modal-title">Change Intake SOC Date</div><input type="hidden" id="cd-code">
     <div class="form-group"><label class="form-label">Intake</label><input class="form-input" id="cd-code-display" disabled></div>
     <div class="form-group" style="margin-top:var(--s4)"><label class="form-label">New SOC Date *</label><input type="date" class="form-input" id="cd-soc"></div>
-    <p class="status-note" style="margin-top:var(--s3)">The intake will hide 14 days before the revised SOC date. Historical lead data will remain unchanged.</p>
+    <p class="status-note" style="margin-top:var(--s3)">The intake will hide 14 days before the revised SOC date. Historical weeks retain the SOC date applicable at that time.</p>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-change-date')">Cancel</button><button class="btn btn-primary" onclick="saveIntakeDate()">Save Date</button></div>
   </div>
 </div>
@@ -540,7 +535,7 @@ input,select,textarea{font:inherit;color:inherit}
 <div class="modal-backdrop" id="modal-confirm-del" onclick="closeModalOutside(event,'modal-confirm-del')">
   <div class="modal" style="max-width:400px">
     <div class="modal-title">Archive Intake?</div>
-    <p style="font-size:var(--tx-sm);color:var(--color-text-muted);margin-bottom:var(--s2)">This will hide intake <strong id="del-intake-code"></strong> from active screens. Historical lead data will remain.</p>
+    <p style="font-size:var(--tx-sm);color:var(--color-text-muted);margin-bottom:var(--s2)">This will hide intake <strong id="del-intake-code"></strong> from active weeks after its archive date. Past weekly records remain available.</p>
     <p style="font-size:var(--tx-xs);color:var(--color-error)">Only the System Administrator can perform this action.</p>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-confirm-del')">Cancel</button>
@@ -590,7 +585,7 @@ function currentState(){
 
 function applyState(state){
   if(!state || typeof state !== 'object') return;
-  if(Array.isArray(state.intakes)) INTAKES=state.intakes.map(i=>({...i,active:i.active!==false,archivedAt:i.archivedAt||null,archivedBy:i.archivedBy||null}));
+  if(Array.isArray(state.intakes)) INTAKES=state.intakes.map(i=>({...i,active:i.active!==false,archivedAt:i.archivedAt||null,archivedBy:i.archivedBy||null,socHistory:Array.isArray(i.socHistory)?i.socHistory:[]}));
   if(state.weeksData&&typeof state.weeksData==='object') weeksData=state.weeksData;
   if(state.submissionLog&&typeof state.submissionLog==='object') submissionLog=state.submissionLog;
   if(Array.isArray(state.auditLog)) auditLog=state.auditLog;
@@ -700,12 +695,11 @@ function getWeekDisplayDate(d){
   return display;
 }
 function fmtDate(s){ return new Date(s).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}); }
-function fmtWeekDate(d){ return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }
-function getSalesWeekRange(d){
-  const monday=new Date(d); monday.setHours(0,0,0,0);
-  const daysFromMonday=(monday.getDay()+6)%7;
-  monday.setDate(monday.getDate()-daysFromMonday);
-  const friday=new Date(monday); friday.setDate(monday.getDate()+4);
+function fmtWeekDate(d){return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;}
+function getSelectedWeekRange(){
+  const monday=new Date(getWeekDate(currentWeekOffset));monday.setHours(0,0,0,0);
+  monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+  const friday=new Date(monday);friday.setDate(monday.getDate()+4);
   return {monday,friday};
 }
 function toLocalDateKey(d){
@@ -717,11 +711,9 @@ function toLocalDateKey(d){
 function getWeekKey(d){ return toLocalDateKey(getWeekDisplayDate(d)); }
 function getCurrentWeekKey(){ return getWeekKey(getWeekDate(currentWeekOffset)); }
 function updateWeekLabel(){
-  const d=getWeekDate(currentWeekOffset);
-  const {monday,friday}=getSalesWeekRange(d);
+  const {monday,friday}=getSelectedWeekRange();
   document.getElementById('week-label').textContent=`${fmtWeekDate(monday)} to ${fmtWeekDate(friday)}`;
-  const inputWeek=document.getElementById('input-week');
-  if(inputWeek) inputWeek.value=toLocalDateKey(monday);
+  const inputWeek=document.getElementById('input-week');if(inputWeek)inputWeek.value=toLocalDateKey(monday);
 }
 function getWeekData(){
   const k = getCurrentWeekKey();
@@ -734,18 +726,31 @@ function changeWeek(dir){
   renderDashboard();
 }
 
-/* ADMIN ACCESS, VISIBILITY AND AUDIT */
+/* ADMIN ACCESS AND SELECTED-WEEK VISIBILITY */
 function isAdmin(){return sessionStorage.getItem(ADMIN_SESSION_KEY)==='true';}
 async function sha256(value){const bytes=new TextEncoder().encode(value);const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 function openAdminLogin(){document.getElementById('admin-login-error').textContent='';document.getElementById('admin-password').value='';document.getElementById('admin-login-screen').classList.remove('hidden');setTimeout(()=>document.getElementById('admin-password').focus(),0);safeCreateIcons();}
 function closeAdminLogin(){document.getElementById('admin-login-screen').classList.add('hidden');}
-async function adminLogin(event){event.preventDefault();const hash=await sha256(document.getElementById('admin-password').value);if(hash!==ADMIN_PASSWORD_HASH){document.getElementById('admin-login-error').textContent='Incorrect password.';document.getElementById('admin-password').select();return;}sessionStorage.setItem(ADMIN_SESSION_KEY,'true');closeAdminLogin();applyAccess();renderDashboard();showToast('System Administrator login successful.');}
+async function adminLogin(event){event.preventDefault();if(await sha256(document.getElementById('admin-password').value)!==ADMIN_PASSWORD_HASH){document.getElementById('admin-login-error').textContent='Incorrect password.';return;}sessionStorage.setItem(ADMIN_SESSION_KEY,'true');closeAdminLogin();applyAccess();renderDashboard();showToast('System Administrator login successful.');}
 function adminLogout(){sessionStorage.removeItem(ADMIN_SESSION_KEY);applyAccess();renderDashboard();showToast('Administrator logged out.');}
 function requireAdmin(){if(isAdmin())return true;showToast('System Administrator login required.');openAdminLogin();return false;}
-function applyAccess(){const admin=isAdmin();const add=document.getElementById('btn-new-intake');if(add)add.style.display=admin?'inline-flex':'none';document.getElementById('btn-admin-login').style.display=admin?'none':'inline-flex';document.getElementById('btn-admin-logout').style.display=admin?'inline-flex':'none';document.getElementById('session-user-label').textContent=admin?'System Administrator':'Sales User';safeCreateIcons();}
+function applyAccess(){const a=isAdmin();const add=document.getElementById('btn-new-intake');if(add)add.style.display=a?'inline-flex':'none';document.getElementById('btn-admin-login').style.display=a?'none':'inline-flex';document.getElementById('btn-admin-logout').style.display=a?'inline-flex':'none';document.getElementById('session-user-label').textContent=a?'System Administrator':'Sales User';safeCreateIcons();}
 function parseLocalDate(value){const [y,m,d]=String(value).split('-').map(Number);return new Date(y,m-1,d,0,0,0,0);}
-function isVisibleIntake(intake,referenceDate=new Date()){const today=new Date(referenceDate);today.setHours(0,0,0,0);const hideFrom=parseLocalDate(intake.soc);hideFrom.setDate(hideFrom.getDate()-AUTO_HIDE_DAYS_BEFORE_SOC);return intake.active!==false&&today<hideFrom;}
-function activeIntakes(){return sortBySocDate(INTAKES.filter(i=>isVisibleIntake(i)));}
+function getSocForReferenceDate(intake,referenceDate){
+  const history=Array.isArray(intake.socHistory)?[...intake.socHistory].sort((a,b)=>new Date(a.changedAt)-new Date(b.changedAt)):[];
+  let applicableSoc=intake.soc;
+  for(let index=history.length-1;index>=0;index--){const change=history[index];if(referenceDate<new Date(change.changedAt))applicableSoc=change.previousSoc;else break;}
+  return applicableSoc;
+}
+function wasIntakeActiveForWeek(intake,weekReferenceDate){
+  const referenceDate=new Date(weekReferenceDate);referenceDate.setHours(23,59,59,999);
+  if(intake.createdAt&&new Date(intake.createdAt)>referenceDate)return false;
+  if(intake.archivedAt&&new Date(intake.archivedAt)<=referenceDate)return false;
+  const applicableSoc=getSocForReferenceDate(intake,referenceDate);
+  const hideDate=parseLocalDate(applicableSoc);hideDate.setDate(hideDate.getDate()-AUTO_HIDE_DAYS_BEFORE_SOC);
+  return referenceDate<hideDate;
+}
+function getIntakesForSelectedWeek(){const {friday}=getSelectedWeekRange();return sortBySocDate(INTAKES.filter(i=>wasIntakeActiveForWeek(i,friday)));}
 function addAudit(action,code,previousValue,newValue){auditLog.push({action,intakeCode:code,performedBy:'System Administrator',performedAt:new Date().toISOString(),previousValue:previousValue||null,newValue:newValue||null});}
 function recordSubmission(person,source){const key=getCurrentWeekKey();submissionLog[key]=submissionLog[key]||{};submissionLog[key][person]={submittedAt:new Date().toISOString(),source};}
 /* METRICS */
@@ -758,13 +763,8 @@ function sortBySocDate(rows){
 }
 
 function calcIntakeMetrics(weekData){
-  return activeIntakes().map(intake=>{
-    const row = weekData[intake.code]||{};
-    const total = SALES_TEAM.reduce((s,p)=>s+(row[p]||0),0);
-    return {...intake, total, row};
-  });
+  return getIntakesForSelectedWeek().map(intake=>{const row=weekData[intake.code]||{};const total=SALES_TEAM.reduce((sum,p)=>sum+(Number(row[p])||0),0);return {...intake,total,row};});
 }
-function calcHistoricalMetrics(weekData){return sortBySocDate(INTAKES).map(intake=>{const row=weekData[intake.code]||{};const total=SALES_TEAM.reduce((sum,p)=>sum+(row[p]||0),0);return {...intake,total,row};});}
 function personTotals(metrics){
   const t={};
   SALES_TEAM.forEach(p=>{ t[p]=metrics.reduce((s,m)=>s+(m.row[p]||0),0); });
@@ -781,7 +781,7 @@ function renderDashboard(){
   _currentMetrics = metrics;
   const totalLeads = metrics.reduce((s,m)=>s+m.total,0);
   animateNum(document.getElementById('kpi-total'), totalLeads);
-  animateNum(document.getElementById('kpi-intakes'), activeIntakes().length);
+  animateNum(document.getElementById('kpi-intakes'), metrics.length);
   renderIntakeTable();
   renderPersonBars(personTotals(metrics), totalLeads);
   renderPersonTable(metrics);
@@ -872,7 +872,7 @@ function renderIntakeChart(metrics){
 /* HISTORY */
 function renderHistory(){
   const entries = Object.entries(weeksData).map(([key,data])=>{
-    const m = calcHistoricalMetrics(data);
+    const m = calcIntakeMetrics(data);
     return {key, total:m.reduce((s,x)=>s+x.total,0)};
   }).sort((a,b)=>a.key>b.key?1:-1);
   const tbody = document.getElementById('history-tbody');
@@ -911,7 +911,7 @@ function buildInputForm(){
   const person = document.getElementById('sel-name').value;
   const wd = getWeekData();
   const container = document.getElementById('intake-input-list');
-  container.innerHTML = activeIntakes().map(intake=>{
+  container.innerHTML = getIntakesForSelectedWeek().map(intake=>{
     const row = wd[intake.code]||{};
     const val = person ? (row[person]||0) : '';
     const total = SALES_TEAM.reduce((s,p)=>s+(row[p]||0),0);
@@ -959,7 +959,7 @@ function submitLeads(){
 /* QUICK SUBMIT MODAL */
 function openQuickSubmit(){
   const fields = document.getElementById('modal-intake-fields');
-  fields.innerHTML = activeIntakes().map(intake=>{
+  fields.innerHTML = getIntakesForSelectedWeek().map(intake=>{
     const soc = new Date(intake.soc).toLocaleDateString('en-SG',{day:'numeric',month:'short'});
     return `<div style="display:flex;align-items:center;gap:var(--s3)">
       <div style="flex:1;min-width:0">
@@ -978,7 +978,7 @@ function submitFromModal(){
   if(!person){ showToast('Please select your name.'); return; }
   const wd = getWeekData();
   let count=0;
-  activeIntakes().forEach(intake=>{
+  getIntakesForSelectedWeek().forEach(intake=>{
     const inp = document.getElementById('qinp-'+intake.code);
     const v = parseInt(inp?.value)||0;
     if(!wd[intake.code]) wd[intake.code]={};
@@ -995,7 +995,7 @@ function submitFromModal(){
 
 /* NEW INTAKE MODAL */
 function openNewIntakeModal(){
-  if(!requireAdmin()) return;
+  if(!requireAdmin())return;
   document.getElementById('ni-code').value='';
   document.getElementById('ni-medium').value='';
   document.getElementById('ni-soc').value='';
@@ -1004,14 +1004,14 @@ function openNewIntakeModal(){
 }
 
 function saveNewIntake(){
-  if(!requireAdmin()) return;
+  if(!requireAdmin())return;
   const code = document.getElementById('ni-code').value.trim().toUpperCase();
   const medium = document.getElementById('ni-medium').value;
   const soc = document.getElementById('ni-soc').value;
   const pic = document.getElementById('ni-pic').value;
   if(!code||!medium||!soc||!pic){ showToast('Please fill in all required fields.'); return; }
   if(INTAKES.find(i=>i.code===code)){ showToast('Intake code already exists.'); return; }
-  const intake={code,medium,soc,pic,active:true,createdAt:new Date().toISOString(),createdBy:'System Administrator'};INTAKES.push(intake);addAudit('INTAKE_CREATED',code,null,intake);
+  const intake={code,medium,soc,pic,active:true,createdAt:new Date().toISOString(),createdBy:'System Administrator',socHistory:[]};INTAKES.push(intake);addAudit('INTAKE_CREATED',code,null,intake);
   closeModal('modal-new-intake');
   renderDashboard();
   saveState();
@@ -1020,21 +1020,27 @@ function saveNewIntake(){
 
 /* CHANGE INTAKE SOC DATE */
 function openChangeDate(code){if(!requireAdmin())return;const intake=INTAKES.find(i=>i.code===code);if(!intake)return;document.getElementById('cd-code').value=code;document.getElementById('cd-code-display').value=code;document.getElementById('cd-soc').value=intake.soc;openModal('modal-change-date');}
-function saveIntakeDate(){if(!requireAdmin())return;const code=document.getElementById('cd-code').value;const newSoc=document.getElementById('cd-soc').value;const index=INTAKES.findIndex(i=>i.code===code);if(index<0||!newSoc){showToast('Please select a valid SOC date.');return;}const previous={...INTAKES[index]};INTAKES[index]={...INTAKES[index],soc:newSoc,updatedAt:new Date().toISOString(),updatedBy:'System Administrator'};addAudit('INTAKE_SOC_DATE_CHANGED',code,previous,INTAKES[index]);closeModal('modal-change-date');saveState();renderDashboard();buildInputForm();showToast(`SOC date for ${code} changed to ${fmtDate(newSoc)}.`);}
+function saveIntakeDate(){
+  if(!requireAdmin())return;const code=document.getElementById('cd-code').value,newSoc=document.getElementById('cd-soc').value,index=INTAKES.findIndex(i=>i.code===code);
+  if(index<0||!newSoc){showToast('Please select a valid SOC date.');return;}
+  const previous={...INTAKES[index]},history=Array.isArray(INTAKES[index].socHistory)?[...INTAKES[index].socHistory]:[];
+  history.push({previousSoc:INTAKES[index].soc,newSoc,changedAt:new Date().toISOString(),changedBy:'System Administrator'});
+  INTAKES[index]={...INTAKES[index],soc:newSoc,socHistory:history,updatedAt:new Date().toISOString(),updatedBy:'System Administrator'};
+  addAudit('INTAKE_SOC_DATE_CHANGED',code,previous,INTAKES[index]);closeModal('modal-change-date');saveState();renderDashboard();buildInputForm();showToast(`SOC date for ${code} changed to ${fmtDate(newSoc)}.`);
+}
 /* DELETE INTAKE */
 function promptDeleteIntake(code){
-  if(!requireAdmin()) return;
+  if(!requireAdmin())return;
   _deleteTarget = code;
   document.getElementById('del-intake-code').textContent = code;
   openModal('modal-confirm-del');
 }
 function confirmDeleteIntake(){
   if(!_deleteTarget) return;
-  if(!requireAdmin()) return;
-  const code=_deleteTarget;const index=INTAKES.findIndex(i=>i.code===code);const previous=index>=0?{...INTAKES[index]}:null;
-  if(index>=0)INTAKES[index]={...INTAKES[index],active:false,archivedAt:new Date().toISOString(),archivedBy:'System Administrator'};
-  addAudit('INTAKE_ARCHIVED',code,previous,index>=0?INTAKES[index]:null);
-  _deleteTarget=null;
+  if(!requireAdmin())return;
+  const code=_deleteTarget,index=INTAKES.findIndex(i=>i.code===code),previous=index>=0?{...INTAKES[index]}:null;
+  if(index>=0)INTAKES[index]={...INTAKES[index],active:false,archivedAt:new Date().toISOString(),archivedBy:'System Administrator',updatedAt:new Date().toISOString(),updatedBy:'System Administrator'};
+  addAudit('INTAKE_ARCHIVED',code,previous,index>=0?INTAKES[index]:null);_deleteTarget=null;
   closeModal('modal-confirm-del');
   renderDashboard();
   saveState();
